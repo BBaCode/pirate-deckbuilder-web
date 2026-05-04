@@ -1,18 +1,58 @@
+export type ResourceId = "cannonCharge" | (string & {});
+
+export type StatusEffectId = "weak" | "vulnerable" | "strength" | (string & {});
+
+export type ResourceState = Record<string, { value: number; max: number }>;
+
+export type StatusEffectState = Record<string, number>;
+
+export type ResourceDefinition = {
+  id: ResourceId;
+  name: string;
+  max: number;
+  initialValue: number;
+};
+
+export type CardCondition =
+  | { type: "resourceAtLeast"; resourceId: ResourceId; amount: number }
+  | { type: "resourceGreaterThan"; resourceId: ResourceId; amount: number };
+
+export type CardScaling =
+  | {
+      type: "resource";
+      resourceId: ResourceId;
+      multiplier: number;
+      consume?: "all";
+    };
+
 export type CardEffect =
-  | { type: "damage"; amount: number; hits?: number }
+  | { type: "damage"; amount: number; hits?: number; scaling?: CardScaling[] }
   | { type: "block"; amount: number }
   | { type: "heal"; amount: number }
   | { type: "draw"; amount: number }
   | { type: "energy"; amount: number }
   | { type: "nextTurnEnergy"; amount: number }
   | { type: "loseHp"; amount: number }
-  | { type: "reduceEnemyBlock"; amount: number };
+  | { type: "reduceEnemyBlock"; amount: number }
+  | { type: "resource"; resourceId: ResourceId; amount: number }
+  | { type: "applyStatus"; target: "player" | "enemy"; statusId: StatusEffectId; amount: number }
+  | { type: "conditional"; condition: CardCondition; effects: CardEffect[] }
+  | { type: "activatePower"; powerId: string };
 
 export type CardRarity = "common" | "uncommon" | "rare";
 
 export type CrewRarity = "common" | "uncommon" | "rare";
 
-export type CardTag = "attack" | "defense" | "repair" | "cannon" | "boarding" | "curse" | "utility";
+export type CardTag =
+  | "attack"
+  | "defense"
+  | "repair"
+  | "cannon"
+  | "boarding"
+  | "curse"
+  | "utility"
+  | "power"
+  | "status";
 
 export type Card = {
   id: string;
@@ -22,6 +62,8 @@ export type Card = {
   rarity: CardRarity;
   tags: CardTag[];
   effects: CardEffect[];
+  onDrawEffects?: CardEffect[];
+  unplayable?: boolean;
 };
 
 export type CardInstance = {
@@ -36,6 +78,7 @@ export type StartingDeckEntry = {
 
 export type ShipPassive =
   | { type: "battleStartBlock"; amount: number }
+  | { type: "battleStartResource"; resourceId: ResourceId; amount: number }
   | { type: "firstAttackBonus"; amount: number }
   | { type: "firstTurnDraw"; amount: number };
 
@@ -47,6 +90,7 @@ export type PlayerShipDefinition = {
   maxHp: number;
   startingDeck: StartingDeckEntry[];
   passive: ShipPassive;
+  resources?: ResourceDefinition[];
 };
 
 export type CrewTriggerType =
@@ -80,13 +124,21 @@ export type CrewMateDefinition = {
 export type EnemyAction =
   | { type: "attack"; amount: number; hits?: number }
   | { type: "block"; amount: number }
-  | { type: "attackBlock"; attack: number; block: number };
+  | { type: "attackBlock"; attack: number; block: number }
+  | { type: "applyStatus"; target: "player" | "self"; statusId: StatusEffectId; amount: number }
+  | { type: "addStatusCard"; cardId: string; count: number };
+
+export type EnemyActionPhase = {
+  hpAtOrBelow: number;
+  actions: EnemyAction[];
+};
 
 export type EnemyDefinition = {
   id: string;
   name: string;
   maxHp: number;
   actions: EnemyAction[];
+  actionPhases?: EnemyActionPhase[];
 };
 
 export type EncounterType = "normal" | "elite" | "port" | "event" | "boss";
@@ -124,6 +176,8 @@ export type CombatantState = {
   hp: number;
   maxHp: number;
   block: number;
+  resources: ResourceState;
+  statusEffects: StatusEffectState;
 };
 
 export type BattleState = {
@@ -137,6 +191,7 @@ export type BattleState = {
   exhaustPile: CardInstance[];
   nextTurnEnergyBonus: number;
   firstAttackBonusUsed: boolean;
+  activePowers: Record<string, number>;
   turn: number;
 };
 

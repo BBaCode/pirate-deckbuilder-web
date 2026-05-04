@@ -1,6 +1,128 @@
 import type { Card, CardRarity } from "../types/game";
 
 export const cards: Record<string, Card> = {
+  basic_attack: {
+    id: "basic_attack",
+    name: "Basic Attack",
+    cost: 1,
+    description: "Deal 6 damage.",
+    rarity: "common",
+    tags: ["attack"],
+    effects: [{ type: "damage", amount: 6 }],
+  },
+  basic_defend: {
+    id: "basic_defend",
+    name: "Basic Defend",
+    cost: 1,
+    description: "Gain 5 block.",
+    rarity: "common",
+    tags: ["defense"],
+    effects: [{ type: "block", amount: 5 }],
+  },
+  load_cannons: {
+    id: "load_cannons",
+    name: "Load Cannons",
+    cost: 1,
+    description: "Gain 2 Cannon Charge.",
+    rarity: "common",
+    tags: ["cannon", "utility"],
+    effects: [{ type: "resource", resourceId: "cannonCharge", amount: 2 }],
+  },
+  fire_cannons: {
+    id: "fire_cannons",
+    name: "Fire Cannons",
+    cost: 1,
+    description: "Consume all Cannon Charge. Deal 4 damage per charge.",
+    rarity: "common",
+    tags: ["attack", "cannon"],
+    effects: [
+      {
+        type: "damage",
+        amount: 0,
+        scaling: [{ type: "resource", resourceId: "cannonCharge", multiplier: 4, consume: "all" }],
+      },
+    ],
+  },
+  quick_load: {
+    id: "quick_load",
+    name: "Quick Load",
+    cost: 0,
+    description: "Gain 1 Cannon Charge. Draw 1 card.",
+    rarity: "common",
+    tags: ["cannon", "utility"],
+    effects: [
+      { type: "resource", resourceId: "cannonCharge", amount: 1 },
+      { type: "draw", amount: 1 },
+    ],
+  },
+  reinforced_hull: {
+    id: "reinforced_hull",
+    name: "Reinforced Hull",
+    cost: 1,
+    description: "Gain 8 block. If you have at least 2 Cannon Charge, gain 4 more block.",
+    rarity: "common",
+    tags: ["defense", "cannon"],
+    effects: [
+      { type: "block", amount: 8 },
+      {
+        type: "conditional",
+        condition: { type: "resourceAtLeast", resourceId: "cannonCharge", amount: 2 },
+        effects: [{ type: "block", amount: 4 }],
+      },
+    ],
+  },
+  chain_shot: {
+    id: "chain_shot",
+    name: "Chain Shot",
+    cost: 1,
+    description: "Deal 5 damage. If you have Cannon Charge, apply 1 Weak.",
+    rarity: "common",
+    tags: ["attack", "cannon", "utility"],
+    effects: [
+      { type: "damage", amount: 5 },
+      {
+        type: "conditional",
+        condition: { type: "resourceGreaterThan", resourceId: "cannonCharge", amount: 0 },
+        effects: [{ type: "applyStatus", target: "enemy", statusId: "weak", amount: 1 }],
+      },
+    ],
+  },
+  overload_fire: {
+    id: "overload_fire",
+    name: "Overload Fire",
+    cost: 2,
+    description: "Consume all Cannon Charge. Deal 10 damage per charge. Lose 5 HP.",
+    rarity: "uncommon",
+    tags: ["attack", "cannon"],
+    effects: [
+      {
+        type: "damage",
+        amount: 0,
+        scaling: [{ type: "resource", resourceId: "cannonCharge", multiplier: 10, consume: "all" }],
+      },
+      { type: "loseHp", amount: 5 },
+    ],
+  },
+  ammo_cache: {
+    id: "ammo_cache",
+    name: "Ammo Cache",
+    cost: 1,
+    description: "Power. At end of turn, gain 1 Cannon Charge.",
+    rarity: "uncommon",
+    tags: ["power", "cannon"],
+    effects: [{ type: "activatePower", powerId: "ammo_cache" }],
+  },
+  misfire: {
+    id: "misfire",
+    name: "Misfire",
+    cost: 0,
+    description: "Unplayable. When drawn, lose 1 Cannon Charge.",
+    rarity: "common",
+    tags: ["status", "curse"],
+    effects: [],
+    onDrawEffects: [{ type: "resource", resourceId: "cannonCharge", amount: -1 }],
+    unplayable: true,
+  },
   cannon_shot: {
     id: "cannon_shot",
     name: "Cannon Shot",
@@ -36,18 +158,6 @@ export const cards: Record<string, Card> = {
     rarity: "common",
     tags: ["repair"],
     effects: [{ type: "heal", amount: 3 }],
-  },
-  chain_shot: {
-    id: "chain_shot",
-    name: "Chain Shot",
-    cost: 1,
-    description: "Reduce enemy block by 5, then deal 4 damage.",
-    rarity: "common",
-    tags: ["attack", "cannon", "utility"],
-    effects: [
-      { type: "reduceEnemyBlock", amount: 5 },
-      { type: "damage", amount: 4 },
-    ],
   },
   sandbag: {
     id: "sandbag",
@@ -214,7 +324,7 @@ export const cards: Record<string, Card> = {
 };
 
 export const rewardCardIds = Object.values(cards)
-  .filter((card) => card.id !== "repair")
+  .filter((card) => card.id !== "repair" && !card.tags.includes("status"))
   .map((card) => card.id);
 
 export const cardsByRarity = rewardCardIds.reduce<Record<CardRarity, string[]>>(

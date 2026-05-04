@@ -1,6 +1,22 @@
 import type { PlayerShipDefinition } from "../types/game";
+import { cannonChargeResource } from "../game/mechanics";
 
 export const ships: PlayerShipDefinition[] = [
+  {
+    id: "cannon_ship",
+    name: "Cannon Ship",
+    subtitle: "Momentum cannon starter",
+    description: "Build Cannon Charge, then cash it in for heavy broadsides.",
+    maxHp: 75,
+    startingDeck: [
+      { cardId: "basic_attack", count: 4 },
+      { cardId: "basic_defend", count: 4 },
+      { cardId: "load_cannons", count: 1 },
+      { cardId: "fire_cannons", count: 1 },
+    ],
+    passive: { type: "battleStartResource", resourceId: "cannonCharge", amount: 2 },
+    resources: [cannonChargeResource],
+  },
   {
     id: "iron_gull",
     name: "The Iron Gull",
@@ -40,6 +56,8 @@ export const ships: PlayerShipDefinition[] = [
     passive: { type: "firstTurnDraw", amount: 1 },
   },
 ];
+
+export const playableShips = ships.filter((ship) => ship.id === "cannon_ship");
 
 export const shipsById = Object.fromEntries(ships.map((ship) => [ship.id, ship]));
 

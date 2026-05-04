@@ -1,12 +1,25 @@
 import { cards } from "../data/cards";
 import { enemiesById } from "../data/enemies";
-import type { BattleState, CardEffect, EnemyAction, RunState } from "../types/game";
+import { powers } from "../data/powers";
+import type { BattleState, CardEffect, EnemyAction, EnemyDefinition, RunState } from "../types/game";
 import {
   getBattleStartCrewBonuses,
   getBattleWonHeal,
   getCardPlayedCrewDamage,
   getTurnStartCrewBonuses,
 } from "./crewEngine";
+import { createCardInstance } from "./createInitialRun";
+import {
+  addStatus,
+  applyDamageModifiers,
+  consumeAllResource,
+  createCombatantState,
+  getResourceAmount,
+  isConditionMet,
+  reduceStatuses,
+  resetResources,
+  updateResource,
+} from "./mechanics";
 import { createBattleRewardChoices } from "./rewardEngine";
 
 export function shuffle<T>(items: T[]): T[] {
@@ -28,7 +41,12 @@ export function getCurrentEnemy(run: RunState) {
 export function getEnemyIntent(run: RunState): EnemyAction | null {
   if (!run.battle) return null;
   const enemy = getCurrentEnemy(run);
-  return enemy.actions[run.battle.enemyActionIndex % enemy.actions.length];
+  return getEnemyAction(enemy, run.battle);
+}
+
+export function describeEnemyIntent(run: RunState): string | null {
+  if (!run.battle) return null;
+  return describeEnemyAction(getEnemyAction(getCurrentEnemy(run), run.battle), run);
 }
 
 export function startBattle(run: RunState, encounterIndex: number): RunState {
@@ -39,11 +57,10 @@ export function startBattle(run: RunState, encounterIndex: number): RunState {
   const crewStartBonuses = getBattleStartCrewBonuses(run);
   const battle: BattleState = {
     enemyId: enemyDefinition.id,
-    enemy: {
-      hp: Math.max(1, enemyDefinition.maxHp - crewStartBonuses.enemyHpLoss),
-      maxHp: enemyDefinition.maxHp,
-      block: 0,
-    },
+    enemy: createCombatantState(
+      Math.max(1, enemyDefinition.maxHp - crewStartBonuses.enemyHpLoss),
+      enemyDefinition.maxHp,
+    ),
     enemyActionIndex: 0,
     energy: 3 + crewStartBonuses.energy,
     drawPile: shuffle(run.masterDeck),
@@ -52,6 +69,7 @@ export function startBattle(run: RunState, encounterIndex: number): RunState {
     exhaustPile: [],
     nextTurnEnergyBonus: 0,
     firstAttackBonusUsed: false,
+    activePowers: {},
     turn: 1,
   };
 
@@ -61,7 +79,12 @@ export function startBattle(run: RunState, encounterIndex: number): RunState {
     phase: "battle",
     encounterIndex,
     battle,
-    player: { ...run.player, block: 0 },
+    player: {
+      ...run.player,
+      block: 0,
+      resources: resetResources(run.player.resources, run.ship.resources),
+      statusEffects: {},
+    },
     rewardChoices: [],
     crewChoices: [],
     currentEventId: null,
@@ -78,6 +101,7 @@ export function startBattle(run: RunState, encounterIndex: number): RunState {
 export function drawCards(run: RunState, count: number): RunState {
   if (!run.battle) return run;
 
+  let nextRunBase = run;
   let battle = { ...run.battle };
   let log = run.log;
 
@@ -97,11 +121,33 @@ export function drawCards(run: RunState, count: number): RunState {
     battle = {
       ...battle,
       drawPile: remainingDrawPile,
-      hand: [...battle.hand, nextCard],
     };
+
+    const cardDefinition = cards[nextCard.cardId];
+    if (cardDefinition.onDrawEffects?.length) {
+      let nextRun: RunState = {
+        ...nextRunBase,
+        battle: {
+          ...battle,
+          exhaustPile: [...battle.exhaustPile, nextCard],
+        },
+        log,
+      };
+      for (const effect of cardDefinition.onDrawEffects) {
+        nextRun = applyCardEffect(nextRun, effect);
+      }
+      nextRunBase = nextRun;
+      battle = nextRun.battle ?? battle;
+      log = [`${cardDefinition.name} triggers: ${cardDefinition.description}`, ...nextRun.log].slice(0, 12);
+    } else {
+      battle = {
+        ...battle,
+        hand: [...battle.hand, nextCard],
+      };
+    }
   }
 
-  return { ...run, battle, log };
+  return { ...nextRunBase, battle, log };
 }
 
 export function playCard(run: RunState, cardInstanceId: string): RunState {
@@ -111,6 +157,7 @@ export function playCard(run: RunState, cardInstanceId: string): RunState {
   if (!cardInstance) return run;
 
   const card = cards[cardInstance.cardId];
+  if (card.unplayable) return withLog(run, `${card.name} cannot be played.`);
   if (card.cost > run.battle.energy) return withLog(run, `Not enough wind for ${card.name}.`);
 
   let nextRun: RunState = {
@@ -119,7 +166,6 @@ export function playCard(run: RunState, cardInstanceId: string): RunState {
       ...run.battle,
       energy: run.battle.energy - card.cost,
       hand: run.battle.hand.filter((cardInHand) => cardInHand.instanceId !== cardInstanceId),
-      discardPile: [...run.battle.discardPile, cardInstance],
     },
   };
 
@@ -128,6 +174,7 @@ export function playCard(run: RunState, cardInstanceId: string): RunState {
   }
 
   nextRun = applyCardPlayedBonuses(nextRun, card);
+  nextRun = movePlayedCardToPile(nextRun, cardInstance);
 
   nextRun = withLog(nextRun, `${card.name}: ${card.description}`);
   return checkBattleEnd(nextRun);
@@ -136,12 +183,16 @@ export function playCard(run: RunState, cardInstanceId: string): RunState {
 export function endTurn(run: RunState): RunState {
   if (run.phase !== "battle" || !run.battle) return run;
 
-  let nextRun: RunState = {
+  let nextRun: RunState = applyEndTurnPowers(run);
+
+  nextRun = {
     ...run,
+    ...nextRun,
+    player: reduceStatuses(nextRun.player),
     battle: {
-      ...run.battle,
-      enemy: { ...run.battle.enemy, block: 0 },
-      discardPile: [...run.battle.discardPile, ...run.battle.hand],
+      ...nextRun.battle!,
+      enemy: { ...nextRun.battle!.enemy, block: 0 },
+      discardPile: [...nextRun.battle!.discardPile, ...nextRun.battle!.hand],
       hand: [],
     },
   };
@@ -155,6 +206,7 @@ export function endTurn(run: RunState): RunState {
     player: { ...nextRun.player, block: 0 },
     battle: {
       ...nextRun.battle,
+      enemy: reduceStatuses(nextRun.battle.enemy),
       energy: 3 + nextRun.battle.nextTurnEnergyBonus,
       nextTurnEnergyBonus: 0,
       firstAttackBonusUsed: false,
@@ -168,7 +220,15 @@ export function endTurn(run: RunState): RunState {
 }
 
 function applyBattleStartPassive(run: RunState): RunState {
+  if (run.ship.passive.type === "battleStartResource") {
+    return {
+      ...withLog(run, `${run.ship.name} starts with ${run.ship.passive.amount} ${run.ship.passive.resourceId}.`),
+      player: updateResource(run.player, run.ship.passive.resourceId, run.ship.passive.amount),
+    };
+  }
+
   if (run.ship.passive.type !== "battleStartBlock") return run;
+  if (run.ship.passive.amount <= 0) return run;
 
   return {
     ...withLog(run, `${run.ship.name} braces for ${run.ship.passive.amount} block.`),
@@ -198,7 +258,7 @@ function applyCardPlayedBonuses(run: RunState, card: (typeof cards)[string]): Ru
     ...withLog(run, `Passive bonuses add ${totalDamage} damage.`),
     battle: {
       ...run.battle,
-      enemy: dealDamage(run.battle.enemy, totalDamage),
+      enemy: dealDamage(run.battle.enemy, applyDamageModifiers(totalDamage, run.player, run.battle.enemy)),
       firstAttackBonusUsed: card.tags.includes("attack") ? true : run.battle.firstAttackBonusUsed,
     },
   };
@@ -237,13 +297,16 @@ function applyCardEffect(run: RunState, effect: CardEffect): RunState {
 
   if (effect.type === "damage") {
     const hits = effect.hits ?? 1;
+    const scaled = resolveScaledDamage(run, effect);
+    let nextRun = scaled.run;
     let enemy = run.battle.enemy;
     for (let hit = 0; hit < hits; hit += 1) {
-      enemy = dealDamage(enemy, effect.amount);
+      const damage = applyDamageModifiers(scaled.amount, nextRun.player, enemy);
+      enemy = dealDamage(enemy, damage);
     }
     return {
-      ...run,
-      battle: { ...run.battle, enemy },
+      ...nextRun,
+      battle: { ...nextRun.battle!, enemy },
     };
   }
 
@@ -301,6 +364,48 @@ function applyCardEffect(run: RunState, effect: CardEffect): RunState {
     };
   }
 
+  if (effect.type === "resource") {
+    return {
+      ...run,
+      player: updateResource(run.player, effect.resourceId, effect.amount),
+    };
+  }
+
+  if (effect.type === "applyStatus") {
+    if (effect.target === "player") {
+      return {
+        ...run,
+        player: addStatus(run.player, effect.statusId, effect.amount),
+      };
+    }
+
+    return {
+      ...run,
+      battle: {
+        ...run.battle,
+        enemy: addStatus(run.battle.enemy, effect.statusId, effect.amount),
+      },
+    };
+  }
+
+  if (effect.type === "conditional") {
+    if (!isConditionMet(run.player, effect.condition)) return run;
+    return effect.effects.reduce((nextRun, nestedEffect) => applyCardEffect(nextRun, nestedEffect), run);
+  }
+
+  if (effect.type === "activatePower") {
+    return {
+      ...run,
+      battle: {
+        ...run.battle,
+        activePowers: {
+          ...run.battle.activePowers,
+          [effect.powerId]: (run.battle.activePowers[effect.powerId] ?? 0) + 1,
+        },
+      },
+    };
+  }
+
   return {
     ...run,
     battle: {
@@ -313,20 +418,108 @@ function applyCardEffect(run: RunState, effect: CardEffect): RunState {
   };
 }
 
+function resolveScaledDamage(
+  run: RunState,
+  effect: Extract<CardEffect, { type: "damage" }>,
+): { run: RunState; amount: number } {
+  let amount = effect.amount;
+  let nextRun = run;
+
+  for (const scaling of effect.scaling ?? []) {
+    if (scaling.type === "resource") {
+      const resourceAmount = getResourceAmount(nextRun.player, scaling.resourceId);
+      amount += resourceAmount * scaling.multiplier;
+      if (scaling.consume === "all") {
+        const consumed = consumeAllResource(nextRun.player, scaling.resourceId);
+        nextRun = { ...nextRun, player: consumed.combatant };
+      }
+    }
+  }
+
+  return { run: nextRun, amount };
+}
+
+function movePlayedCardToPile(run: RunState, cardInstance: { instanceId: string; cardId: string }): RunState {
+  if (!run.battle) return run;
+  const card = cards[cardInstance.cardId];
+  if (card.tags.includes("power")) {
+    return {
+      ...run,
+      battle: {
+        ...run.battle,
+        exhaustPile: [...run.battle.exhaustPile, cardInstance],
+      },
+    };
+  }
+
+  return {
+    ...run,
+    battle: {
+      ...run.battle,
+      discardPile: [...run.battle.discardPile, cardInstance],
+    },
+  };
+}
+
+function applyEndTurnPowers(run: RunState): RunState {
+  if (!run.battle) return run;
+
+  return Object.entries(run.battle.activePowers).reduce((nextRun, [powerId, stacks]) => {
+    const power = powers[powerId];
+    if (!power) return nextRun;
+
+    let poweredRun = nextRun;
+    for (let stack = 0; stack < stacks; stack += 1) {
+      poweredRun = power.endTurnEffects.reduce(
+        (effectRun, effect) => applyCardEffect(effectRun, effect),
+        poweredRun,
+      );
+    }
+
+    return withLog(poweredRun, `${power.name} adds momentum.`);
+  }, run);
+}
+
 function performEnemyAction(run: RunState): RunState {
   if (!run.battle) return run;
 
   const enemyDefinition = getCurrentEnemy(run);
-  const action = enemyDefinition.actions[run.battle.enemyActionIndex % enemyDefinition.actions.length];
+  const action = getEnemyAction(enemyDefinition, run.battle);
   let nextRun = run;
 
   if (action.type === "attack") {
     nextRun = enemyAttack(nextRun, action.amount, action.hits ?? 1);
   } else if (action.type === "block") {
     nextRun = enemyBlock(nextRun, action.amount);
-  } else {
+  } else if (action.type === "attackBlock") {
     nextRun = enemyAttack(nextRun, action.attack, 1);
     nextRun = enemyBlock(nextRun, action.block);
+  } else if (action.type === "applyStatus") {
+    if (action.target === "self") {
+      if (!nextRun.battle) return nextRun;
+      nextRun = {
+        ...nextRun,
+        battle: {
+          ...nextRun.battle,
+          enemy: addStatus(nextRun.battle.enemy, action.statusId, action.amount),
+        },
+      };
+    } else {
+      nextRun = {
+        ...nextRun,
+        player: addStatus(nextRun.player, action.statusId, action.amount),
+      };
+    }
+  } else {
+    if (!nextRun.battle) return nextRun;
+    const statusCards = Array.from({ length: action.count }, () => createCardInstance(action.cardId));
+    nextRun = {
+      ...nextRun,
+      battle: {
+        ...nextRun.battle,
+        discardPile: [...nextRun.battle.discardPile, ...statusCards],
+      },
+    };
   }
 
   return {
@@ -343,7 +536,8 @@ function performEnemyAction(run: RunState): RunState {
 function enemyAttack(run: RunState, amount: number, hits: number): RunState {
   let player = run.player;
   for (let hit = 0; hit < hits; hit += 1) {
-    player = dealDamage(player, amount);
+    const damage = run.battle ? applyDamageModifiers(amount, run.battle.enemy, player) : amount;
+    player = dealDamage(player, damage);
   }
   return { ...run, player };
 }
@@ -434,11 +628,35 @@ function markCurrentEncounterComplete(run: RunState): RunState {
   };
 }
 
-export function describeEnemyAction(action: EnemyAction): string {
+function getEnemyAction(enemy: EnemyDefinition, battle: BattleState): EnemyAction {
+  const actions = getEnemyActions(enemy, battle);
+  return actions[battle.enemyActionIndex % actions.length];
+}
+
+function getEnemyActions(enemy: EnemyDefinition, battle: BattleState): EnemyAction[] {
+  const matchingPhase = [...(enemy.actionPhases ?? [])]
+    .sort((left, right) => left.hpAtOrBelow - right.hpAtOrBelow)
+    .find((phase) => battle.enemy.hp <= phase.hpAtOrBelow);
+
+  return matchingPhase?.actions ?? enemy.actions;
+}
+
+export function describeEnemyAction(action: EnemyAction, run?: RunState): string {
   if (action.type === "attack") {
     const hits = action.hits && action.hits > 1 ? ` x ${action.hits}` : "";
-    return `Attacks for ${action.amount}${hits}`;
+    const amount = getIntentAttackAmount(action.amount, run);
+    return `Attacks for ${amount}${hits}`;
   }
   if (action.type === "block") return `Gains ${action.amount} block`;
-  return `Attacks for ${action.attack} and gains ${action.block} block`;
+  if (action.type === "attackBlock") {
+    return `Attacks for ${getIntentAttackAmount(action.attack, run)} and gains ${action.block} block`;
+  }
+  if (action.type === "applyStatus" && action.target === "self") return `Gains ${action.amount} ${action.statusId}`;
+  if (action.type === "applyStatus") return `Applies ${action.amount} ${action.statusId}`;
+  return `Adds ${action.count} ${cards[action.cardId]?.name ?? "status card"}`;
+}
+
+function getIntentAttackAmount(amount: number, run?: RunState): number {
+  if (!run?.battle) return amount;
+  return applyDamageModifiers(amount, run.battle.enemy, run.player);
 }

@@ -20,6 +20,16 @@ export const enemies: EnemyDefinition[] = [
     ],
   },
   {
+    id: "saboteur",
+    name: "Saboteur",
+    maxHp: 32,
+    actions: [
+      { type: "applyStatus", target: "player", statusId: "weak", amount: 1 },
+      { type: "addStatusCard", cardId: "misfire", count: 1 },
+      { type: "attack", amount: 7 },
+    ],
+  },
+  {
     id: "powder_sloop",
     name: "Powder Sloop",
     maxHp: 34,
@@ -31,37 +41,50 @@ export const enemies: EnemyDefinition[] = [
   {
     id: "corsair",
     name: "Corsair",
-    maxHp: 40,
+    maxHp: 46,
     actions: [
-      { type: "attack", amount: 8 },
+      { type: "applyStatus", target: "self", statusId: "strength", amount: 1 },
+      { type: "attack", amount: 9 },
       { type: "attackBlock", attack: 5, block: 5 },
     ],
   },
   {
     id: "royal_hunter",
     name: "Royal Hunter",
-    maxHp: 48,
+    maxHp: 56,
     actions: [
-      { type: "attack", amount: 11 },
+      { type: "applyStatus", target: "self", statusId: "strength", amount: 2 },
+      { type: "attack", amount: 12 },
       { type: "block", amount: 9 },
-      { type: "attackBlock", attack: 7, block: 6 },
+      { type: "attackBlock", attack: 8, block: 7 },
     ],
   },
   {
     id: "ghost_frigate",
     name: "Ghost Frigate",
-    maxHp: 60,
+    maxHp: 100,
     actions: [
+      { type: "applyStatus", target: "self", statusId: "strength", amount: 1 },
       { type: "attack", amount: 10 },
-      { type: "block", amount: 10 },
+      { type: "block", amount: 12 },
       { type: "attack", amount: 6, hits: 2 },
+    ],
+    actionPhases: [
+      {
+        hpAtOrBelow: 50,
+        actions: [
+          { type: "applyStatus", target: "self", statusId: "strength", amount: 3 },
+          { type: "attack", amount: 14, hits: 2 },
+          { type: "attackBlock", attack: 16, block: 12 },
+        ],
+      },
     ],
   },
 ];
 
 export const enemiesById = Object.fromEntries(enemies.map((enemy) => [enemy.id, enemy]));
 
-export const normalEnemyIds = ["dinghy_raider", "reef_smuggler", "powder_sloop"];
+export const normalEnemyIds = ["dinghy_raider", "reef_smuggler", "saboteur", "powder_sloop"];
 
 export const eliteEnemyIds = ["corsair", "royal_hunter"];
 

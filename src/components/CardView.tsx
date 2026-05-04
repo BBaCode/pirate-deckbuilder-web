@@ -10,18 +10,33 @@ type CardViewProps = {
   card: CardInstance;
   disabled?: boolean;
   damageBonuses?: CardDamageBonus[];
+  resourceValues?: Record<string, number>;
+  viewOnly?: boolean;
   onPlay?: (instanceId: string) => void;
 };
 
-export function CardView({ card, disabled = false, damageBonuses = [], onPlay }: CardViewProps) {
+export function CardView({
+  card,
+  disabled = false,
+  damageBonuses = [],
+  resourceValues = {},
+  viewOnly = false,
+  onPlay,
+}: CardViewProps) {
   const definition = cards[card.cardId];
-  const damageText = buildDamageText(definition, damageBonuses);
+  const damageText = buildDamageText(definition, damageBonuses, resourceValues);
+  const isDisabled = !viewOnly && (disabled || definition.unplayable);
 
   return (
     <button
-      className={`card rarity-${definition.rarity}`}
-      disabled={disabled}
-      onClick={() => onPlay?.(card.instanceId)}
+      className={`card rarity-${definition.rarity} ${viewOnly ? "view-only" : ""}`}
+      disabled={isDisabled}
+      aria-disabled={viewOnly ? true : undefined}
+      tabIndex={viewOnly ? -1 : undefined}
+      type="button"
+      onClick={() => {
+        if (!viewOnly) onPlay?.(card.instanceId);
+      }}
     >
       <span className="card-cost">{definition.cost}</span>
       <span className="rarity-label">{definition.rarity}</span>
@@ -46,13 +61,24 @@ export function CardView({ card, disabled = false, damageBonuses = [], onPlay }:
   );
 }
 
-function buildDamageText(card: Card, damageBonuses: CardDamageBonus[]): { base: string; bonuses: CardDamageBonus[] } | null {
+function buildDamageText(
+  card: Card,
+  damageBonuses: CardDamageBonus[],
+  resourceValues: Record<string, number>,
+): { base: string; bonuses: CardDamageBonus[] } | null {
   const damageEffect = card.effects.find((effect) => effect.type === "damage");
-  if (!damageEffect || damageBonuses.length === 0) return null;
+  if (!damageEffect) return null;
 
+  const scaledAmount = (damageEffect.scaling ?? []).reduce((amount, scaling) => {
+    if (scaling.type === "resource") {
+      return amount + (resourceValues[scaling.resourceId] ?? 0) * scaling.multiplier;
+    }
+    return amount;
+  }, damageEffect.amount);
+  if (damageBonuses.length === 0 && scaledAmount === damageEffect.amount) return null;
   const hits = damageEffect.hits && damageEffect.hits > 1 ? ` x ${damageEffect.hits}` : "";
   return {
-    base: `${damageEffect.amount}${hits}`,
+    base: `${scaledAmount}${hits}`,
     bonuses: damageBonuses,
   };
 }

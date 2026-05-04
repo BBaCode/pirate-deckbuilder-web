@@ -1,12 +1,13 @@
 import { getShipDefinition } from "../data/ships";
 import type { CardInstance, RunState } from "../types/game";
+import { createCombatantState } from "./mechanics";
 import { enterCurrentEncounter, generateEncounters } from "./runEngine";
 
 let nextInstanceNumber = 1;
 
-export function createCardInstance(cardId: string): CardInstance {
+export function createCardInstance(cardId: string, resolvedCardId?: string): CardInstance {
   return {
-    cardId,
+    cardId: resolvedCardId ?? cardId,
     instanceId: `card-${Date.now()}-${nextInstanceNumber++}`,
   };
 }
@@ -27,7 +28,7 @@ export function createInitialRun(shipId: string): RunState {
     selectedShipId: ship.id,
     ship,
     crew: [],
-    player: { hp: ship.maxHp, maxHp: ship.maxHp, block: 0 },
+    player: createCombatantState(ship.maxHp, ship.maxHp, 0, ship.resources),
     masterDeck,
     battle: null,
     rewardChoices: [],

@@ -1,21 +1,19 @@
 import { events } from "../data/events";
 import { bossEnemyIds, eliteEnemyIds, normalEnemyIds } from "../data/enemies";
 import type { CardInstance, Encounter, EncounterType, EventChoiceEffect, RunState } from "../types/game";
-import { shuffle, startBattle } from "./combatEngine";
+import { startBattle } from "./combatEngine";
 import { addCrewMate, generateCrewReward, getAvailableCrew, getPortHealBonus } from "./crewEngine";
 import { createEventCardChoices } from "./rewardEngine";
 
 const RUN_LENGTH = 7;
+const ENCOUNTER_SEQUENCE: EncounterType[] = ["normal", "normal", "event", "normal", "elite", "port", "boss"];
 
 export function generateEncounters(seed: number): Encounter[] {
-  const firstSixTypes = createEncounterTypes();
   const bossId = pickOne(bossEnemyIds);
   let normalCursor = Math.abs(seed) % normalEnemyIds.length;
   let eliteCursor = Math.abs(seed + 1) % eliteEnemyIds.length;
 
-  const encounterTypes: EncounterType[] = [...firstSixTypes, "boss"];
-
-  return encounterTypes.map((type, index) => {
+  return ENCOUNTER_SEQUENCE.map((type, index) => {
     let enemyId: string | undefined;
 
     if (type === "normal") {
@@ -326,59 +324,8 @@ export function createCardInstance(source: string, cardId: string): CardInstance
   };
 }
 
-function createEncounterTypes(): EncounterType[] {
-  // Build only the first six nodes here; the boss is always appended as encounter seven.
-  // The loop retries until the simple roguelike pacing constraints are satisfied.
-  for (let attempts = 0; attempts < 80; attempts += 1) {
-    const hasElite = Math.random() < 0.65;
-    const combatCountBeforeBoss = hasElite ? 3 + randomInt(2) : 3 + randomInt(3);
-    const nonCombatCount = 6 - combatCountBeforeBoss;
-    const types: EncounterType[] = [
-      ...Array.from({ length: combatCountBeforeBoss - (hasElite ? 1 : 0) }, () => "normal" as const),
-      ...Array.from({ length: hasElite ? 1 : 0 }, () => "elite" as const),
-      ...createNonCombatTypes(nonCombatCount),
-    ];
-
-    const shuffled = shuffle(types);
-    if (isValidEncounterPrefix(shuffled)) return shuffled;
-  }
-
-  return ["normal", "port", "normal", "event", "elite", "normal"];
-}
-
-function createNonCombatTypes(count: number): EncounterType[] {
-  const result: EncounterType[] = [];
-  for (let index = 0; index < count; index += 1) {
-    result.push(Math.random() < 0.55 ? "event" : "port");
-  }
-  return result;
-}
-
-function isValidEncounterPrefix(types: EncounterType[]): boolean {
-  const combatCount = types.filter((type) => type === "normal" || type === "elite").length + 1;
-  const eliteCount = types.filter((type) => type === "elite").length;
-  return combatCount >= 4 && eliteCount <= 1 && !hasThreeNonCombatInARow(types) && !hasBackToBackPorts(types);
-}
-
-function hasThreeNonCombatInARow(types: EncounterType[]): boolean {
-  let streak = 0;
-  for (const type of types) {
-    streak = type === "port" || type === "event" ? streak + 1 : 0;
-    if (streak > 2) return true;
-  }
-  return false;
-}
-
-function hasBackToBackPorts(types: EncounterType[]): boolean {
-  return types.some((type, index) => type === "port" && types[index + 1] === "port");
-}
-
 function pickOne<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)];
-}
-
-function randomInt(exclusiveMax: number): number {
-  return Math.floor(Math.random() * exclusiveMax);
 }
 
 function withLog(run: RunState, message: string): RunState {
