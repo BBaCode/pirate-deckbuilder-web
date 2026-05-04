@@ -1,5 +1,6 @@
 import { cards } from "../data/cards";
 import { eventsById } from "../data/events";
+import { getCardDisplayType } from "../game/cardTypes";
 import type { RunState } from "../types/game";
 import { RunMap } from "./RunMap";
 
@@ -13,6 +14,7 @@ type EventScreenProps = {
 
 export function EventScreen({ run, onChooseEventChoice, onChooseEventCard, onContinue, onRestart }: EventScreenProps) {
   const addedCard = run.phase === "eventReward" ? cards[run.rewardChoices[0]] : null;
+  const addedCardType = addedCard ? getCardDisplayType(addedCard) : null;
   const event = run.currentEventId ? eventsById[run.currentEventId] : null;
 
   return (
@@ -34,15 +36,13 @@ export function EventScreen({ run, onChooseEventChoice, onChooseEventCard, onCon
           </section>
 
           <section className="reward-grid event-reward-grid">
-            <article className={`card reward-card rarity-${addedCard.rarity}`}>
+            <article className={`card reward-card rarity-${addedCard.rarity} card-kind-${addedCardType}`}>
               <span className="card-cost">{addedCard.cost}</span>
               <span className="rarity-label">{addedCard.rarity}</span>
               <strong>{addedCard.name}</strong>
               <span className="card-description">{addedCard.description}</span>
               <span className="tag-row">
-                {addedCard.tags.map((tag) => (
-                  <span className="tag" key={tag}>{tag}</span>
-                ))}
+                <span className="tag">{addedCardType}</span>
               </span>
             </article>
           </section>
@@ -58,16 +58,15 @@ export function EventScreen({ run, onChooseEventChoice, onChooseEventCard, onCon
           <section className="reward-grid">
             {run.rewardChoices.map((cardId) => {
               const card = cards[cardId];
+              const cardType = getCardDisplayType(card);
               return (
-                <button className={`card reward-card rarity-${card.rarity}`} key={card.id} onClick={() => onChooseEventCard(card.id)}>
+                <button className={`card reward-card rarity-${card.rarity} card-kind-${cardType}`} key={card.id} onClick={() => onChooseEventCard(card.id)}>
                   <span className="card-cost">{card.cost}</span>
                   <span className="rarity-label">{card.rarity}</span>
                   <strong>{card.name}</strong>
                   <span className="card-description">{card.description}</span>
                   <span className="tag-row">
-                    {card.tags.map((tag) => (
-                      <span className="tag" key={tag}>{tag}</span>
-                    ))}
+                    <span className="tag">{cardType}</span>
                   </span>
                 </button>
               );

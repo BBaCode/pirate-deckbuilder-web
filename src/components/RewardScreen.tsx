@@ -1,4 +1,5 @@
 import { cards } from "../data/cards";
+import { getCardDisplayType } from "../game/cardTypes";
 import type { RunState } from "../types/game";
 import { RunMap } from "./RunMap";
 
@@ -25,16 +26,15 @@ export function RewardScreen({ run, onChooseReward, onSkipReward, onRestart }: R
       <section className="reward-grid">
         {run.rewardChoices.map((cardId) => {
           const card = cards[cardId];
+          const cardType = getCardDisplayType(card);
           return (
-            <button className={`card reward-card rarity-${card.rarity}`} key={cardId} onClick={() => onChooseReward(cardId)}>
+            <button className={`card reward-card rarity-${card.rarity} card-kind-${cardType}`} key={cardId} onClick={() => onChooseReward(cardId)}>
               <span className="card-cost">{card.cost}</span>
               <span className="rarity-label">{card.rarity}</span>
               <strong>{card.name}</strong>
               <span className="card-description">{card.description}</span>
               <span className="tag-row">
-                {card.tags.map((tag) => (
-                  <span className="tag" key={tag}>{tag}</span>
-                ))}
+                <span className="tag">{cardType}</span>
               </span>
             </button>
           );

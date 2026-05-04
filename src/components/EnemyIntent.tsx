@@ -10,7 +10,7 @@ export function EnemyIntent({ action, description }: EnemyIntentProps) {
   if (!action) return null;
 
   return (
-    <div className="intent">
+    <div className={`intent intent-${action.type}`}>
       <span>Intent</span>
       <strong>{description ?? describeEnemyAction(action)}</strong>
     </div>

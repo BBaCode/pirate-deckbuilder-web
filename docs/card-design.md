@@ -43,7 +43,7 @@ Examples:
 - Acquired mainly via events
 - Stronger than status cards
 
-### (NEW) Tactical Cards (rare)
+### (NEW) Tactical Cards (rare) (unsure if using yet)
 
 - High impact, limited usage (1 per combat or exhaust)
 - Often include tradeoffs

@@ -67,7 +67,13 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
           <h1>Dark Seas of Ether</h1>
         </div>
         <div className="topbar-actions">
-          <button className="secondary" onClick={() => setIsMapOpen(true)}>Map</button>
+          <button className="secondary modal-action" onClick={() => setViewedPile("draw")}>
+            Draw {run.battle.drawPile.length}
+          </button>
+          <button className="secondary modal-action" onClick={() => setViewedPile("discard")}>
+            Discard {run.battle.discardPile.length}
+          </button>
+          <button className="secondary modal-action" onClick={() => setIsMapOpen(true)}>Map</button>
           <button className="secondary" onClick={onRestart}>Restart Run</button>
         </div>
       </header>
@@ -116,12 +122,6 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
               {formatLabel(resourceId)} {resource.value}/{resource.max}
             </span>
           ))}
-          <button className="resource-pill pile-button" onClick={() => setViewedPile("draw")}>
-            Draw {run.battle.drawPile.length}
-          </button>
-          <button className="resource-pill pile-button" onClick={() => setViewedPile("discard")}>
-            Discard {run.battle.discardPile.length}
-          </button>
         </div>
         <button className="primary" onClick={onEndTurn}>End Turn</button>
       </section>
@@ -270,52 +270,60 @@ function ShipPanel({
 
   return (
     <article className={`ship ${accent}`}>
-      <div className={`ship-art ${imageSrc ? "has-image" : ""}`} aria-hidden="true">
-        {imageSrc ? <img src={imageSrc} alt="" /> : null}
-        {!imageSrc ? <span>{accent === "player" ? "SHIP" : "FOE"}</span> : null}
-      </div>
-      <div className="ship-title">
-        <p className="eyebrow">{accent === "player" ? "Your vessel" : "Enemy vessel"}</p>
-        <h2>{name}</h2>
-        {subtitle ? <span>{subtitle}</span> : null}
-        {intent}
-      </div>
-      <div className="meter" aria-label={`${name} HP`}>
-        <span style={{ width: `${hpPercent}%` }} />
-      </div>
-      {hpIndicator ? (
-        <span
-          className={`hp-float hp-float-${hpIndicator.type}`}
-          key={hpIndicator.id}
-          aria-live="polite"
-        >
-          {hpIndicator.type === "damage" ? "-" : "+"}
-          {hpIndicator.amount}
-        </span>
-      ) : null}
-      <div className="stat-row">
-        <strong>{hp}/{maxHp} HP</strong>
-        <span className="block-badge">{block} Block</span>
-      </div>
-      {visibleResources.length > 0 ? (
-        <div className="stat-chip-row">
-          {visibleResources.map(([resourceId, resource]) => (
-            <span className="resource-pill" key={resourceId}>
-              {formatLabel(resourceId)} {resource.value}/{resource.max}
-            </span>
-          ))}
+      <div className="ship-main">
+        <div className={`ship-art ${imageSrc ? "has-image" : ""}`} aria-hidden="true">
+          {imageSrc ? <img src={imageSrc} alt="" /> : null}
+          {!imageSrc ? <span>{accent === "player" ? "SHIP" : "FOE"}</span> : null}
         </div>
-      ) : null}
-      {visibleStatuses.length > 0 ? (
-        <div className="stat-chip-row">
-          {visibleStatuses.map(([statusId, amount]) => (
-            <span className="status-badge" key={statusId}>
-              {formatLabel(statusId)} {amount}
-            </span>
-          ))}
+        <div className="ship-title">
+          <p className="eyebrow">{accent === "player" ? "Your vessel" : "Enemy vessel"}</p>
+          <h2>{name}</h2>
+          {subtitle ? <span>{subtitle}</span> : null}
+          {intent}
         </div>
-      ) : null}
-      {footer}
+      </div>
+
+      <div className="ship-combat-stats">
+        <div className="meter" aria-label={`${name} HP`}>
+          <span style={{ width: `${hpPercent}%` }} />
+        </div>
+        {hpIndicator ? (
+          <span
+            className={`hp-float hp-float-${hpIndicator.type}`}
+            key={hpIndicator.id}
+            aria-live="polite"
+          >
+            {hpIndicator.type === "damage" ? "-" : "+"}
+            {hpIndicator.amount}
+          </span>
+        ) : null}
+        <div className="stat-row">
+          <strong>{hp}/{maxHp} HP</strong>
+          <span className="block-badge">{block} Block</span>
+        </div>
+      </div>
+
+      <div className="ship-extras">
+        {visibleResources.length > 0 ? (
+          <div className="stat-chip-row">
+            {visibleResources.map(([resourceId, resource]) => (
+              <span className="resource-pill" key={resourceId}>
+                {formatLabel(resourceId)} {resource.value}/{resource.max}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {visibleStatuses.length > 0 ? (
+          <div className="stat-chip-row">
+            {visibleStatuses.map(([statusId, amount]) => (
+              <span className="status-badge" key={statusId}>
+                {formatLabel(statusId)} {amount}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {footer}
+      </div>
     </article>
   );
 }

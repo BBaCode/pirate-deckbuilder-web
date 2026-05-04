@@ -1,4 +1,5 @@
 import { cards } from "../data/cards";
+import { getCardDisplayType } from "../game/cardTypes";
 import type { Card, CardInstance } from "../types/game";
 
 export type CardDamageBonus = {
@@ -26,10 +27,11 @@ export function CardView({
   const definition = cards[card.cardId];
   const damageText = buildDamageText(definition, damageBonuses, resourceValues);
   const isDisabled = !viewOnly && (disabled || definition.unplayable);
+  const cardType = getCardDisplayType(definition);
 
   return (
     <button
-      className={`card rarity-${definition.rarity} ${viewOnly ? "view-only" : ""}`}
+      className={`card rarity-${definition.rarity} card-kind-${cardType} ${viewOnly ? "view-only" : ""}`}
       disabled={isDisabled}
       aria-disabled={viewOnly ? true : undefined}
       tabIndex={viewOnly ? -1 : undefined}
@@ -53,9 +55,7 @@ export function CardView({
         </span>
       ) : null}
       <span className="tag-row">
-        {definition.tags.map((tag) => (
-          <span className="tag" key={tag}>{tag}</span>
-        ))}
+        <span className="tag">{cardType}</span>
       </span>
     </button>
   );
