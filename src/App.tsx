@@ -7,6 +7,7 @@ import { PortScreen } from "./components/PortScreen";
 import { RewardScreen } from "./components/RewardScreen";
 import { ShipSelectScreen } from "./components/ShipSelectScreen";
 import { VictoryScreen } from "./components/VictoryScreen";
+import { WelcomeScreen } from "./components/WelcomeScreen";
 import { endTurn, playCard } from "./game/combatEngine";
 import { createInitialRun } from "./game/createInitialRun";
 import {
@@ -26,6 +27,7 @@ import type { RunState } from "./types/game";
 
 export default function App() {
   const [run, setRun] = useState<RunState | null>(() => loadRun());
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(() => Boolean(run));
 
   useEffect(() => {
     if (run) saveRun(run);
@@ -47,6 +49,10 @@ export default function App() {
   }
 
   if (!run) {
+    if (!hasSeenWelcome) {
+      return <WelcomeScreen onPlay={() => setHasSeenWelcome(true)} />;
+    }
+
     return <ShipSelectScreen onSelectShip={startRun} />;
   }
 

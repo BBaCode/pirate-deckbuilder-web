@@ -11,6 +11,9 @@
   --wood: #6d4327;
   --wood-dark: #321d13;
   --wood-light: #9a6338;
+  --deck-brown: #4a2c1d;
+  --deck-brown-dark: #26150e;
+  --deck-brown-mid: #5f3a27;
   --brass: #c58a2f;
   --brass-light: #ffd36c;
   --blood: #9f342c;
@@ -22,7 +25,7 @@
   --card-width: clamp(150px, 14vw, 180px);
   --card-height: calc(var(--card-width) * 1.48);
   color: var(--ink);
-  background: var(--sea-abyss);
+  background: var(--deck-brown-dark);
   font-family: var(--pixel-font);
   font-synthesis: none;
   text-rendering: geometricPrecision;
@@ -43,9 +46,8 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   background:
-    linear-gradient(180deg, rgba(255, 211, 108, 0.16) 0 1px, transparent 1px 100%),
-    repeating-linear-gradient(90deg, rgba(255, 232, 184, 0.08) 0 2px, transparent 2px 88px),
-    linear-gradient(180deg, #173646 0%, #0d2635 35%, #081822 64%, #050c12 100%);
+    radial-gradient(circle at 50% 0%, rgba(255, 211, 108, 0.13), transparent 36vh),
+    linear-gradient(180deg, #5b3927 0%, var(--deck-brown) 42%, var(--deck-brown-dark) 100%);
 }
 
 body::before,
@@ -62,19 +64,18 @@ body::before {
   top: 0;
   height: 58vh;
   background:
-    linear-gradient(180deg, rgba(255, 211, 108, 0.18), transparent 32%),
-    repeating-linear-gradient(0deg, transparent 0 17px, rgba(255, 232, 184, 0.1) 17px 19px, transparent 19px 62px),
-    repeating-linear-gradient(90deg, transparent 0 41px, rgba(255, 232, 184, 0.1) 41px 43px, transparent 43px 116px);
-  opacity: 0.55;
+    linear-gradient(180deg, rgba(255, 211, 108, 0.14), transparent 34%),
+    repeating-linear-gradient(90deg, rgba(255, 232, 184, 0.045) 0 1px, transparent 1px 72px),
+    repeating-linear-gradient(0deg, transparent 0 34px, rgba(38, 21, 14, 0.22) 34px 37px, transparent 37px 84px);
+  opacity: 0.7;
 }
 
 body::after {
   bottom: 0;
   height: 42vh;
   background:
-    repeating-linear-gradient(174deg, rgba(168, 216, 190, 0.28) 0 9px, transparent 9px 28px),
-    repeating-linear-gradient(2deg, rgba(31, 102, 112, 0.66) 0 18px, rgba(18, 58, 72, 0.66) 18px 36px),
-    linear-gradient(180deg, rgba(7, 21, 31, 0), rgba(7, 21, 31, 0.94));
+    repeating-linear-gradient(2deg, rgba(95, 58, 39, 0.58) 0 18px, rgba(56, 33, 22, 0.58) 18px 36px),
+    linear-gradient(180deg, rgba(74, 44, 29, 0), rgba(38, 21, 14, 0.92));
   image-rendering: pixelated;
   animation: tide 9s steps(4, end) infinite alternate;
 }
@@ -122,6 +123,72 @@ h2 {
 
 .centered {
   min-height: 100vh;
+}
+
+.welcome-screen {
+  min-height: 100vh;
+  color: var(--parchment-light);
+}
+
+.welcome-hero {
+  position: relative;
+  display: grid;
+  align-items: end;
+  min-height: 100vh;
+  padding: clamp(24px, 6vw, 72px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.welcome-hero-image,
+.welcome-hero-shade {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.welcome-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.welcome-hero-shade {
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(20, 10, 6, 0.92) 0%, rgba(38, 21, 14, 0.66) 42%, rgba(38, 21, 14, 0.16) 78%),
+    linear-gradient(180deg, rgba(20, 10, 6, 0.16) 0%, rgba(20, 10, 6, 0.28) 56%, rgba(20, 10, 6, 0.78) 100%);
+}
+
+.welcome-content {
+  display: grid;
+  gap: 18px;
+  width: min(720px, 100%);
+  padding-bottom: min(8vh, 70px);
+}
+
+.welcome-kicker {
+  color: var(--brass-light);
+  text-shadow: 2px 2px 0 rgba(20, 10, 6, 0.82);
+}
+
+.welcome-lore {
+  display: grid;
+  gap: 12px;
+  max-width: 680px;
+  color: #ffecc5;
+  font-size: clamp(0.95rem, 1.4vw, 1.12rem);
+  font-weight: 850;
+  line-height: 1.5;
+  text-shadow: 2px 2px 0 rgba(20, 10, 6, 0.82), 0 0 18px rgba(20, 10, 6, 0.58);
+}
+
+.welcome-play {
+  width: max-content;
+  min-width: 148px;
+  margin-top: 6px;
+  font-size: 1.05rem;
 }
 
 .topbar,
@@ -277,9 +344,9 @@ h2 {
   border: 3px solid var(--wood-dark);
   border-radius: var(--radius);
   background:
-    linear-gradient(180deg, rgba(255, 211, 108, 0.28), transparent 28%),
-    repeating-linear-gradient(180deg, rgba(168, 216, 190, 0.3) 0 8px, rgba(31, 102, 112, 0.3) 8px 16px),
-    linear-gradient(180deg, #246472 0%, #113947 56%, #09202c 100%);
+    linear-gradient(180deg, rgba(255, 211, 108, 0.18), transparent 30%),
+    repeating-linear-gradient(180deg, rgba(255, 232, 184, 0.08) 0 8px, rgba(38, 21, 14, 0.1) 8px 16px),
+    linear-gradient(180deg, var(--deck-brown-mid) 0%, var(--deck-brown) 54%, var(--deck-brown-dark) 100%);
   box-shadow: inset 0 0 0 4px rgba(255, 232, 184, 0.16), 0 10px 0 var(--wood-dark);
 }
 
@@ -1287,6 +1354,31 @@ h2 {
   .screen {
     width: min(100% - 20px, 1180px);
     padding-top: 18px;
+  }
+
+  .welcome-hero {
+    min-height: 100svh;
+    padding: 22px;
+  }
+
+  .welcome-hero-image {
+    object-position: 58% center;
+  }
+
+  .welcome-hero-shade {
+    background:
+      linear-gradient(180deg, rgba(20, 10, 6, 0.32) 0%, rgba(38, 21, 14, 0.66) 42%, rgba(20, 10, 6, 0.92) 100%),
+      linear-gradient(90deg, rgba(20, 10, 6, 0.82), rgba(20, 10, 6, 0.2));
+  }
+
+  .welcome-content {
+    gap: 14px;
+    padding-bottom: 0;
+  }
+
+  .welcome-lore {
+    font-size: 0.9rem;
+    line-height: 1.42;
   }
 
   .topbar,
