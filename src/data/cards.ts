@@ -39,7 +39,14 @@ export const cards: Record<string, Card> = {
       {
         type: "damage",
         amount: 0,
-        scaling: [{ type: "resource", resourceId: "cannonCharge", multiplier: 4, consume: "all" }],
+        scaling: [
+          {
+            type: "resource",
+            resourceId: "cannonCharge",
+            multiplier: 4,
+            consume: "all",
+          },
+        ],
       },
     ],
   },
@@ -59,14 +66,19 @@ export const cards: Record<string, Card> = {
     id: "reinforced_hull",
     name: "Reinforced Hull",
     cost: 1,
-    description: "Gain 8 block. If you have at least 2 Cannon Charge, gain 4 more block.",
+    description:
+      "Gain 8 block. If you have at least 2 Cannon Charge, gain 4 more block.",
     rarity: "common",
     tags: ["defense", "cannon"],
     effects: [
       { type: "block", amount: 8 },
       {
         type: "conditional",
-        condition: { type: "resourceAtLeast", resourceId: "cannonCharge", amount: 2 },
+        condition: {
+          type: "resourceAtLeast",
+          resourceId: "cannonCharge",
+          amount: 2,
+        },
         effects: [{ type: "block", amount: 4 }],
       },
     ],
@@ -82,8 +94,14 @@ export const cards: Record<string, Card> = {
       { type: "damage", amount: 5 },
       {
         type: "conditional",
-        condition: { type: "resourceGreaterThan", resourceId: "cannonCharge", amount: 0 },
-        effects: [{ type: "applyStatus", target: "enemy", statusId: "weak", amount: 1 }],
+        condition: {
+          type: "resourceGreaterThan",
+          resourceId: "cannonCharge",
+          amount: 0,
+        },
+        effects: [
+          { type: "applyStatus", target: "enemy", statusId: "weak", amount: 1 },
+        ],
       },
     ],
   },
@@ -91,16 +109,24 @@ export const cards: Record<string, Card> = {
     id: "overload_fire",
     name: "Overload Fire",
     cost: 2,
-    description: "Consume all Cannon Charge. Deal 10 damage per charge. Lose 5 HP.",
+    description:
+      "Consume all Cannon Charge. Deal 10 damage per charge. Lose 10 HP.",
     rarity: "uncommon",
     tags: ["attack", "cannon"],
     effects: [
       {
         type: "damage",
         amount: 0,
-        scaling: [{ type: "resource", resourceId: "cannonCharge", multiplier: 10, consume: "all" }],
+        scaling: [
+          {
+            type: "resource",
+            resourceId: "cannonCharge",
+            multiplier: 10,
+            consume: "all",
+          },
+        ],
       },
-      { type: "loseHp", amount: 5 },
+      { type: "loseHp", amount: 10 },
     ],
   },
   ammo_cache: {
@@ -120,7 +146,9 @@ export const cards: Record<string, Card> = {
     rarity: "common",
     tags: ["status", "curse"],
     effects: [],
-    onDrawEffects: [{ type: "resource", resourceId: "cannonCharge", amount: -1 }],
+    onDrawEffects: [
+      { type: "resource", resourceId: "cannonCharge", amount: -1 },
+    ],
     unplayable: true,
   },
   cannon_shot: {
@@ -255,7 +283,7 @@ export const cards: Record<string, Card> = {
     cost: 3,
     description: "Deal 20 damage.",
     rarity: "rare",
-    tags: ["attack", "curse"],
+    tags: ["attack"],
     effects: [{ type: "damage", amount: 20 }],
   },
   ghost_sail: {
@@ -264,7 +292,7 @@ export const cards: Record<string, Card> = {
     cost: 2,
     description: "Gain 15 block. Draw 1 card.",
     rarity: "rare",
-    tags: ["defense", "curse", "utility"],
+    tags: ["defense", "utility"],
     effects: [
       { type: "block", amount: 15 },
       { type: "draw", amount: 1 },
@@ -303,14 +331,11 @@ export const cards: Record<string, Card> = {
   rally_the_crew: {
     id: "rally_the_crew",
     name: "Rally the Crew",
-    cost: 2,
-    description: "Gain 2 energy next turn. Draw 2 cards.",
+    cost: 1,
+    description: "Gain 2 energy next turn",
     rarity: "rare",
     tags: ["boarding", "utility"],
-    effects: [
-      { type: "nextTurnEnergy", amount: 2 },
-      { type: "draw", amount: 2 },
-    ],
+    effects: [{ type: "nextTurnEnergy", amount: 2 }],
   },
   repair: {
     id: "repair",

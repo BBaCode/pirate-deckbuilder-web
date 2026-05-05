@@ -209,7 +209,7 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
   }
 
   return (
-    <main className="screen">
+    <main className="screen" data-testid="battle-screen">
       <header
         className="topbar battle-topbar"
         ref={(node) => {
@@ -220,10 +220,18 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
           <h1>Dark Seas of Ether</h1>
         </div>
         <div className="topbar-actions">
-          <button className="secondary modal-action" onClick={() => setViewedPile("draw")}>
+          <button
+            className="secondary modal-action"
+            data-testid="draw-pile-button"
+            onClick={() => setViewedPile("draw")}
+          >
             Draw {run.battle.drawPile.length}
           </button>
-          <button className="secondary modal-action" onClick={() => setViewedPile("discard")}>
+          <button
+            className="secondary modal-action"
+            data-testid="discard-pile-button"
+            onClick={() => setViewedPile("discard")}
+          >
             Discard {run.battle.discardPile.length}
           </button>
           <button className="secondary modal-action" onClick={() => setIsMapOpen(true)}>Map</button>
@@ -253,6 +261,7 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
         }}
       >
         <ShipPanel
+          testId="player-ship"
           name={run.ship.name}
           subtitle={run.ship.subtitle}
           hp={run.player.hp}
@@ -267,6 +276,7 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
         />
 
         <ShipPanel
+          testId="enemy-ship"
           name={enemyDefinition.name}
           hp={run.battle.enemy.hp}
           maxHp={run.battle.enemy.maxHp}
@@ -302,6 +312,7 @@ export function BattleScreen({ run, onPlayCard, onEndTurn, onRestart }: BattleSc
       <section
         className="hand-panel"
         aria-label="Hand"
+        data-testid="hand"
         ref={(node) => {
           tourTargets.current.hand = node;
         }}
@@ -473,6 +484,7 @@ function PileViewer({ title, cards: pileCards, onClose }: PileViewerProps) {
 }
 
 type ShipPanelProps = {
+  testId: string;
   name: string;
   subtitle?: string;
   hp: number;
@@ -488,6 +500,7 @@ type ShipPanelProps = {
 };
 
 function ShipPanel({
+  testId,
   name,
   subtitle,
   hp,
@@ -506,7 +519,7 @@ function ShipPanel({
   const visibleStatuses = Object.entries(statuses).filter(([, amount]) => amount > 0);
 
   return (
-    <article className={`ship ${accent}`}>
+    <article className={`ship ${accent}`} data-testid={testId}>
       <div className="ship-main">
         <div className={`ship-art ${imageSrc ? "has-image" : ""}`} aria-hidden="true">
           {imageSrc ? <img src={imageSrc} alt="" /> : null}
