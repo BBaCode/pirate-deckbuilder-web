@@ -42,6 +42,7 @@ export function loadRun(): RunState | null {
             nextTurnEnergyBonus: parsed.battle.nextTurnEnergyBonus ?? 0,
             firstAttackBonusUsed: parsed.battle.firstAttackBonusUsed ?? false,
             activePowers: parsed.battle.activePowers ?? {},
+            completedEnemyActionPhaseThresholds: parsed.battle.completedEnemyActionPhaseThresholds ?? [],
           }
         : null,
     };

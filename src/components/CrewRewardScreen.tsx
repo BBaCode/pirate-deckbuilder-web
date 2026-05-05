@@ -1,6 +1,6 @@
 import { crewById } from "../data/crew";
 import type { RunState } from "../types/game";
-import { RunMap } from "./RunMap";
+import { TopbarRunActions } from "./TopbarRunActions";
 
 type CrewRewardScreenProps = {
   run: RunState;
@@ -17,9 +17,8 @@ export function CrewRewardScreen({ run, onChooseCrew, onRestart }: CrewRewardScr
           <h1>Choose a crew mate</h1>
           <p className="screen-intro">Every sailor brings a different kind of trouble.</p>
         </div>
-        <button className="secondary" onClick={onRestart}>Restart Run</button>
+        <TopbarRunActions run={run} onRestart={onRestart} />
       </header>
-      <RunMap encounters={run.encounters} currentIndex={run.encounterIndex} />
 
       <section className="crew-choice-grid">
         {run.crewChoices.map((crewId) => {

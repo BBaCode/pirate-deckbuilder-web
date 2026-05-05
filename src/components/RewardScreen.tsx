@@ -1,7 +1,7 @@
 import { cards } from "../data/cards";
 import { getCardDisplayType } from "../game/cardTypes";
 import type { RunState } from "../types/game";
-import { RunMap } from "./RunMap";
+import { TopbarRunActions } from "./TopbarRunActions";
 
 type RewardScreenProps = {
   run: RunState;
@@ -10,25 +10,35 @@ type RewardScreenProps = {
   onRestart: () => void;
 };
 
-export function RewardScreen({ run, onChooseReward, onSkipReward, onRestart }: RewardScreenProps) {
+export function RewardScreen({
+  run,
+  onChooseReward,
+  onSkipReward,
+  onRestart,
+}: RewardScreenProps) {
   return (
     <main className="screen centered">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Spoils of battle</p>
-          <h1>Choose a card</h1>
-          <p className="screen-intro">Claim one prize for the voyage ahead, or sail lighter.</p>
+          <p className="eyebrow">Enemy vessel downed</p>
+          <h1>Victory!</h1>
+          <p className="screen-intro">
+            Choose a card for the voyage ahead, or sail lighter.
+          </p>
         </div>
-        <button className="secondary" onClick={onRestart}>Restart Run</button>
+        <TopbarRunActions run={run} onRestart={onRestart} />
       </header>
-      <RunMap encounters={run.encounters} currentIndex={run.encounterIndex} />
 
       <section className="reward-grid">
         {run.rewardChoices.map((cardId) => {
           const card = cards[cardId];
           const cardType = getCardDisplayType(card);
           return (
-            <button className={`card reward-card rarity-${card.rarity} card-kind-${cardType}`} key={cardId} onClick={() => onChooseReward(cardId)}>
+            <button
+              className={`card reward-card rarity-${card.rarity} card-kind-${cardType}`}
+              key={cardId}
+              onClick={() => onChooseReward(cardId)}
+            >
               <span className="card-cost">{card.cost}</span>
               <span className="rarity-label">{card.rarity}</span>
               <strong>{card.name}</strong>
@@ -40,7 +50,9 @@ export function RewardScreen({ run, onChooseReward, onSkipReward, onRestart }: R
           );
         })}
       </section>
-      <button className="secondary skip-reward" onClick={onSkipReward}>Skip Reward</button>
+      <button className="secondary skip-reward" onClick={onSkipReward}>
+        Skip Reward
+      </button>
     </main>
   );
 }

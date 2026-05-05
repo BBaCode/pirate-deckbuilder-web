@@ -1,7 +1,7 @@
 import { cards } from "../data/cards";
 import { getAvailableCrew } from "../game/crewEngine";
 import type { RunState } from "../types/game";
-import { RunMap } from "./RunMap";
+import { TopbarRunActions } from "./TopbarRunActions";
 
 type PortScreenProps = {
   run: RunState;
@@ -61,16 +61,13 @@ export function PortScreen({ run, onRepair, onRecruitCrew, onStartRemoval, onRem
 
 function Header({ run, onRestart, title }: { run: RunState; onRestart: () => void; title: string }) {
   return (
-    <>
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Encounter {run.encounterIndex + 1} of {run.encounters.length}</p>
-          <h1>{title}</h1>
-          <p className="screen-intro">Spend a quiet hour before the black water calls again.</p>
-        </div>
-        <button className="secondary" onClick={onRestart}>Restart Run</button>
-      </header>
-      <RunMap encounters={run.encounters} currentIndex={run.encounterIndex} />
-    </>
+    <header className="topbar">
+      <div>
+        <p className="eyebrow">Encounter {run.encounterIndex + 1} of {run.encounters.length}</p>
+        <h1>{title}</h1>
+        <p className="screen-intro">Spend a quiet hour before the black water calls again.</p>
+      </div>
+      <TopbarRunActions run={run} onRestart={onRestart} />
+    </header>
   );
 }

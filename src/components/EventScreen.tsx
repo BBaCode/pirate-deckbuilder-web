@@ -2,7 +2,7 @@ import { cards } from "../data/cards";
 import { eventsById } from "../data/events";
 import { getCardDisplayType } from "../game/cardTypes";
 import type { RunState } from "../types/game";
-import { RunMap } from "./RunMap";
+import { TopbarRunActions } from "./TopbarRunActions";
 
 type EventScreenProps = {
   run: RunState;
@@ -25,9 +25,8 @@ export function EventScreen({ run, onChooseEventChoice, onChooseEventCard, onCon
           <h1>{event?.name ?? "Strange Waters"}</h1>
           <p className="screen-intro">A choice waits in the mist.</p>
         </div>
-        <button className="secondary" onClick={onRestart}>Restart Run</button>
+        <TopbarRunActions run={run} onRestart={onRestart} />
       </header>
-      <RunMap encounters={run.encounters} currentIndex={run.encounterIndex} />
 
       {addedCard ? (
         <>

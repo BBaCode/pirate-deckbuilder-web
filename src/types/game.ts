@@ -125,11 +125,12 @@ export type EnemyAction =
   | { type: "attack"; amount: number; hits?: number }
   | { type: "block"; amount: number }
   | { type: "attackBlock"; attack: number; block: number }
-  | { type: "applyStatus"; target: "player" | "self"; statusId: StatusEffectId; amount: number }
+  | { type: "applyStatus"; target: "player" | "self"; statusId: StatusEffectId; amount: number; label?: string }
   | { type: "addStatusCard"; cardId: string; count: number };
 
 export type EnemyActionPhase = {
   hpAtOrBelow: number;
+  transitionAction?: EnemyAction;
   actions: EnemyAction[];
 };
 
@@ -192,6 +193,7 @@ export type BattleState = {
   nextTurnEnergyBonus: number;
   firstAttackBonusUsed: boolean;
   activePowers: Record<string, number>;
+  completedEnemyActionPhaseThresholds: number[];
   turn: number;
 };
 

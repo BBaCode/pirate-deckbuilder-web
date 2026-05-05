@@ -72,8 +72,8 @@ export const enemies: EnemyDefinition[] = [
     actionPhases: [
       {
         hpAtOrBelow: 50,
+        transitionAction: { type: "applyStatus", target: "self", statusId: "strength", amount: 3, label: "Enters rage mode" },
         actions: [
-          { type: "applyStatus", target: "self", statusId: "strength", amount: 3 },
           { type: "attack", amount: 14, hits: 2 },
           { type: "attackBlock", attack: 16, block: 12 },
         ],

@@ -70,6 +70,7 @@ export function startBattle(run: RunState, encounterIndex: number): RunState {
     nextTurnEnergyBonus: 0,
     firstAttackBonusUsed: false,
     activePowers: {},
+    completedEnemyActionPhaseThresholds: [],
     turn: 1,
   };
 
@@ -484,7 +485,8 @@ function performEnemyAction(run: RunState): RunState {
   if (!run.battle) return run;
 
   const enemyDefinition = getCurrentEnemy(run);
-  const action = getEnemyAction(enemyDefinition, run.battle);
+  const actionPlan = getEnemyActionPlan(enemyDefinition, run.battle);
+  const { action } = actionPlan;
   let nextRun = run;
 
   if (action.type === "attack") {
@@ -527,7 +529,11 @@ function performEnemyAction(run: RunState): RunState {
     battle: nextRun.battle
       ? {
           ...nextRun.battle,
-          enemyActionIndex: nextRun.battle.enemyActionIndex + 1,
+          enemyActionIndex: actionPlan.isTransition ? 0 : nextRun.battle.enemyActionIndex + 1,
+          completedEnemyActionPhaseThresholds:
+            actionPlan.isTransition && actionPlan.phaseThreshold !== undefined
+              ? [...nextRun.battle.completedEnemyActionPhaseThresholds, actionPlan.phaseThreshold]
+              : nextRun.battle.completedEnemyActionPhaseThresholds,
         }
       : null,
   };
@@ -629,19 +635,38 @@ function markCurrentEncounterComplete(run: RunState): RunState {
 }
 
 function getEnemyAction(enemy: EnemyDefinition, battle: BattleState): EnemyAction {
-  const actions = getEnemyActions(enemy, battle);
-  return actions[battle.enemyActionIndex % actions.length];
+  return getEnemyActionPlan(enemy, battle).action;
 }
 
-function getEnemyActions(enemy: EnemyDefinition, battle: BattleState): EnemyAction[] {
+function getEnemyActionPlan(
+  enemy: EnemyDefinition,
+  battle: BattleState,
+): { action: EnemyAction; isTransition: boolean; phaseThreshold?: number } {
   const matchingPhase = [...(enemy.actionPhases ?? [])]
     .sort((left, right) => left.hpAtOrBelow - right.hpAtOrBelow)
     .find((phase) => battle.enemy.hp <= phase.hpAtOrBelow);
 
-  return matchingPhase?.actions ?? enemy.actions;
+  if (
+    matchingPhase?.transitionAction &&
+    !battle.completedEnemyActionPhaseThresholds.includes(matchingPhase.hpAtOrBelow)
+  ) {
+    return {
+      action: matchingPhase.transitionAction,
+      isTransition: true,
+      phaseThreshold: matchingPhase.hpAtOrBelow,
+    };
+  }
+
+  const actions = matchingPhase?.actions ?? enemy.actions;
+  return {
+    action: actions[battle.enemyActionIndex % actions.length],
+    isTransition: false,
+    phaseThreshold: matchingPhase?.hpAtOrBelow,
+  };
 }
 
 export function describeEnemyAction(action: EnemyAction, run?: RunState): string {
+  if ("label" in action && action.label) return action.label;
   if (action.type === "attack") {
     const hits = action.hits && action.hits > 1 ? ` x ${action.hits}` : "";
     const amount = getIntentAttackAmount(action.amount, run);
