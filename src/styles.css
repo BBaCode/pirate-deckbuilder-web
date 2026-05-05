@@ -267,71 +267,210 @@ h2 {
 }
 
 .run-map {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.map-node {
   position: relative;
-  display: grid;
-  gap: 5px;
-  min-height: 62px;
-  padding: 9px;
+  width: min(100%, 825px);
+  margin-bottom: 20px;
   overflow: hidden;
-  border: 2px solid var(--wood-dark);
+  border: 4px solid var(--wood-dark);
   border-radius: var(--radius);
-  color: var(--ink-muted);
-  background:
-    repeating-linear-gradient(0deg, rgba(50, 29, 19, 0.07) 0 2px, transparent 2px 8px),
-    var(--parchment);
-  box-shadow: 0 5px 0 rgba(50, 29, 19, 0.72);
+  background: var(--deck-brown-dark);
+  box-shadow: 0 8px 0 var(--wood-dark), 0 18px 34px rgba(23, 13, 8, 0.36);
+  isolation: isolate;
 }
 
-.map-node span {
+.run-map-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+
+.run-map-routes,
+.run-map-nodes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.run-map-legend {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 3;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid rgba(50, 29, 19, 0.86);
+  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(0deg, rgba(50, 29, 19, 0.08) 0 2px, transparent 2px 7px),
+    rgba(255, 232, 184, 0.88);
+  box-shadow: 0 4px 0 rgba(50, 29, 19, 0.78);
+  color: var(--wood-dark);
+  pointer-events: none;
+}
+
+.run-map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.87rem;
+  font-weight: 950;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.run-map-legend-marker {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: 2px solid var(--wood-dark);
-  border-radius: var(--radius);
+  border-radius: 50%;
   color: var(--wood-dark);
   background: var(--brass-light);
   font-size: 0.78rem;
-  font-weight: 950;
+  line-height: 1;
 }
 
-.map-node strong {
-  font-size: 0.78rem;
+.run-map-legend-marker svg,
+.map-node-marker svg {
+  width: 68%;
+  height: 68%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.run-map-routes {
+  z-index: 1;
+  overflow: hidden;
+}
+
+.run-map-route {
+  fill: none;
+  stroke: rgba(45, 29, 18, 0.7);
+  stroke-width: 0.8;
+  stroke-dasharray: 1.2 1.3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0.35px 0 rgba(255, 232, 184, 0.5));
+}
+
+.run-map-route.done {
+  stroke: rgba(92, 58, 28, 0.78);
+}
+
+.run-map-route.available {
+  stroke: rgba(159, 52, 44, 0.92);
+  stroke-width: 1.1;
+}
+
+.run-map-route.locked {
+  stroke: rgba(255, 232, 184, 0.72);
+  stroke-width: 0.9;
+  opacity: 0.72;
+  filter: drop-shadow(0 0.45px 0 rgba(45, 29, 18, 0.82));
+}
+
+.run-map-nodes {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.map-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 2px solid var(--wood-dark);
+  border-radius: 50%;
+  color: var(--wood-dark);
+  background: var(--brass-light);
+  box-shadow: 0 3px 0 rgba(50, 29, 19, 0.78), inset 0 0 0 3px rgba(255, 232, 184, 0.22);
+  font: inherit;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+
+.map-node-marker {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--wood-dark);
+  font-size: 0.7rem;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 1px 1px 0 rgba(255, 232, 184, 0.45);
 }
 
 .map-node.current {
   border-color: var(--brass-light);
   color: var(--parchment-light);
-  background:
-    repeating-linear-gradient(0deg, rgba(168, 216, 190, 0.18) 0 3px, transparent 3px 10px),
-    linear-gradient(180deg, #246b72, #123a48);
-  box-shadow: 0 5px 0 var(--wood-dark), 0 0 0 3px rgba(255, 211, 108, 0.24);
+  background: var(--sea-mid);
+  box-shadow: 0 3px 0 var(--wood-dark), 0 0 0 4px rgba(255, 211, 108, 0.42), inset 0 0 0 3px rgba(255, 232, 184, 0.14);
+}
+
+.map-node.current .map-node-marker {
+  color: var(--parchment-light);
+  text-shadow: 1px 1px 0 var(--wood-dark);
 }
 
 .map-node.done {
-  opacity: 0.62;
+  opacity: 0.72;
+  filter: sepia(0.38);
 }
 
-.map-node.elite span,
-.map-node.boss span {
+.map-node.locked {
+  opacity: 0.5;
+  filter: grayscale(0.4) sepia(0.24);
+  cursor: not-allowed;
+}
+
+.map-node:disabled {
+  color: var(--wood-dark);
+}
+
+.map-node.elite .map-node-marker,
+.map-node.boss .map-node-marker,
+.run-map-legend-marker.elite,
+.run-map-legend-marker.boss {
   color: var(--parchment-light);
   background: var(--blood);
 }
 
-.map-node.port span {
+.map-node.elite,
+.map-node.boss {
+  background: var(--blood);
+}
+
+.map-node.port,
+.run-map-legend-marker.port {
   background: var(--sea-foam);
 }
 
-.map-node.event span {
+.map-node.event,
+.run-map-legend-marker.event {
   color: var(--parchment-light);
   background: #695180;
+}
+
+.map-node.event .map-node-marker {
+  color: var(--parchment-light);
+}
+
+.map-node.normal,
+.run-map-legend-marker.normal {
+  background: var(--brass-light);
 }
 
 .battlefield {
@@ -707,10 +846,14 @@ h2 {
 }
 
 .map-modal {
-  width: min(780px, 100%);
+  width: min(885px, 100%);
+  max-height: min(900px, calc(100vh - 48px));
+  overflow: auto;
 }
 
 .map-modal .run-map {
+  width: 100%;
+  max-width: none;
   margin-bottom: 0;
 }
 
@@ -1383,8 +1526,7 @@ h2 {
 
   .topbar,
   .turn-panel,
-  .battlefield,
-  .run-map {
+  .battlefield {
     display: grid;
   }
 
@@ -1393,8 +1535,30 @@ h2 {
     padding: 12px;
   }
 
-  .run-map {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .map-node {
+    width: 28px;
+    height: 28px;
+  }
+
+  .map-node-marker {
+    font-size: 0.52rem;
+  }
+
+  .run-map-legend {
+    top: 8px;
+    left: 8px;
+    gap: 6px;
+    padding: 9px;
+  }
+
+  .run-map-legend-item {
+    font-size: 0.75rem;
+  }
+
+  .run-map-legend-marker {
+    width: 26px;
+    height: 26px;
+    font-size: 0.69rem;
   }
 
   .ship {
